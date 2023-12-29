@@ -1,0 +1,83 @@
+#!/bin/bash
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+DARK_CYAN='\033[0;36m'
+BOLD='\e[1m'
+NC='\033[0m'
+YELLOW='\033[0;33m'
+GRAY='\033[0;37m'
+
+additional_info_needed=false
+os_name=$(uname -o) # Получение названия операционной системы
+os_arch=$(dpkg --print-architecture) # Получение архитектуры системы
+distro_name=$(cat /etc/os-release | grep '^PRETTY_NAME=' | cut -d '=' -f2 | tr -d '"') # Получение названия дистрибутива
+
+
+IP=`hostname -I | awk '{print $1}'`
+printf "${DARK_CYAN}                                                                           ${NC}\n";
+printf "${DARK_CYAN}  ███████       ██     ██  █████  ██    ██ ███████ ${NC}██${DARK_CYAN}   ███    ███ ███████ ${NC}\n";
+printf "${DARK_CYAN}     ███        ██     ██ ██   ██ ██    ██ ██       ${NC}██${DARK_CYAN}  ████  ████ ██      ${NC}\n";
+printf "${DARK_CYAN}    ███   ${NC}█████${DARK_CYAN} ██  █  ██ ███████ ██    ██ █████     ${NC}██${DARK_CYAN} ██ ████ ██ █████   ${NC}\n";
+printf "${DARK_CYAN}   ███          ██ ███ ██ ██   ██  ██  ██  ██       ${NC}██${DARK_CYAN}  ██  ██  ██ ██      ${NC}\n";
+printf "${DARK_CYAN}  ███████        ███ ███  ██   ██   ████   ███████ ${NC}██${DARK_CYAN}   ██      ██ ███████ ${NC}\n";
+printf "${DARK_CYAN}                                                                           ${NC}\n";
+printf "\nSystem Info: ${os_name}, Architecture: ${os_arch}, Distro: ${distro_name}\n"
+
+check_process() {
+    local package_name=$1
+    local pid_file=$2
+    local service_name=$3
+    # Проверка, установлен ли пакет (предупреждение скрыто)
+    if apt policy "$package_name" 2>/dev/null | grep -q 'Installed: (none)'; then
+        printf "%s status: ${GRAY}⬤  Not Installed${NC}\n" "$service_name"
+        return 1 # Возвращаем 1, что означает, что пакет не установлен
+    else
+        # Проверка наличия PID файла и статуса процесса
+        if [ -f "$pid_file" ]; then
+            local pid=$(cat "$pid_file")
+            if ps -p "$pid" > /dev/null 2>&1; then
+                printf "%s status: ${GREEN}⬤  Running${NC}\n" "$service_name"
+            else
+                printf "%s status: ${RED}⬤  Stopped${NC}\n" "$service_name"
+            fi
+        else
+            printf "%s status: ${YELLOW}⬤  Not Started${NC}\n" "$service_name"
+        fi
+        return 0 # Возвращаем 0, что означает, что пакет установлен
+    fi
+}
+
+# Проверка статуса Z-Way-Server
+if check_process "z-way-server" "/var/run/z-way-server.pid" "Z Way Server"; then
+        printf "Version: $(cat /etc/z-way/VERSION) WEB-UI: ${BLUE}http://${IP}:8083${NC}\n"
+    additional_info_needed=true
+
+fi
+
+# Проверка и вывод информации о ZBW
+if check_process "zbw" "/var/run/zbw_connect.pid" "Remote Access (ZBW)"; then
+    remote_id=$(cat /etc/zbw/userid)
+    printf "Your remote id: ${remote_id}\n"
+
+    # Получение времени создания PID файла и вычисление продолжительности подключения
+    pid_file_age=$(stat -c %Y "/var/run/zbw_connect.pid")
+    current_time=$(date +%s)
+    connection_time=$((current_time - pid_file_age))
+
+    # Преобразование времени в часы и минуты
+    hours=$((connection_time / 3600))
+    minutes=$(((connection_time % 3600) / 60))
+
+    printf "Connection time: ${GREEN}%d hours, %d minutes${NC}\n" "$hours" "$minutes"
+    additional_info_needed=true
+
+fi
+
+# Вывод дополнительной информации в конце, если флаг установлен
+if [ "$additional_info_needed" = true ]; then
+    printf "\n${BOLD}* Documentation: ${NC}${GREEN}https://z-wave.me/files/manual/z-way/${NC}"
+    printf "\n${BOLD}* Website:       ${NC}${GREEN}https://z-wave.me/${NC}"
+    printf "\n${BOLD}* Source:        ${NC}${GREEN}https://github.com/Z-Wave-Me${NC}\n"
+fi

@@ -1,0 +1,12 @@
+libarchive13:armhf
+libssl1.1:armhf
+sharutils:armhf
+gawk:armhf
+libc-ares2:armhf
+libavahi-compat-libdnssd-dev:armhf
+libwebsockets17:armhf
+libmosquitto1:armhf
+logrotate:armhf
+z-way-server:armhf
+webif:armhf
+zbw:armhf
