@@ -1,0 +1,6 @@
+IMG_NAME=RaZberry
+FIRST_USER_PASS=razberry
+ENABLE_SSH=1
+STAGE_LIST="stage0 stage1 stage2 stage3_zway"
+DEPLOY_COMPRESSION=none
+TARGET_HOSTNAME=razberry

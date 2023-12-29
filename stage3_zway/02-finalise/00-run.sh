@@ -46,29 +46,13 @@ systemctl mask serial-getty@ttyAMA0.service
 echo "Disable Bluetooth"
 systemctl disable bluetooth.service
 
-# Add configuration strings to /boot/config.txt if they are not already present.
-for str in "dtoverlay=disable-bt" "enable_uart=1" "dtoverlay=pi3-miniuart-bt"; do
-    if ! grep -q "$str" "/boot/config.txt"; then
-        echo "$str" >> "/boot/config.txt"
-    fi
-done
+echo "dtoverlay=disable-bt" >> "/boot/firmware/config.txt"
+echo "enable_uart=1" >> "/boot/firmware/config.txt"
+echo "dtoverlay=pi3-miniuart-bt" >> "/boot/firmware/config.txt"
+
+
+# Display the last six lines of the config file.
+echo "Last six lines of the config file:"
+tail -n 6 "/boot/firmware/config.txt"
 
 EOF
-
-# Define an array of strings to be added to the config file.
-STRINGS=("dtoverlay=disable-bt" "enable_uart=1" "dtoverlay=pi3-miniuart-bt")
-
-# Function to check if a string is in the config file and add it if not.
-check_and_add() {
-    if grep -q "$1" "$CONFIG_FILE"; then
-        echo "Already added: $1"
-    else
-        echo "Add line: $1"
-        echo "$1" >> "$CONFIG_FILE"
-    fi
-}
-
-# Iterate over the STRINGS array and use the check_and_add function for each item.
-for str in "${STRINGS[@]}"; do
-    check_and_add "$str"
-done
