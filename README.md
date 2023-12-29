@@ -1,7 +1,22 @@
-# pi-gen
+# pi-gen based z-way images builder
 
 Tool used to create Raspberry Pi OS images. (Previously known as Raspbian).
 
+This repository contains a tool for building original Raspberry Pi OS (formerly Raspbian) images. The primary focus of this tool is to streamline the creation of Raspberry Pi OS images that come pre-installed with the Z-Way server, catering specifically to the needs of users utilizing the RaZberry board through the GPIO port.
+## Image Creation Process
+
+Creating a custom Raspberry Pi OS image with the Z-Way server is a straightforward process, requiring Docker and the execution of a build script. Follow these steps to build your image:
+
+### Prerequisites
+
+- **Docker**: Ensure you have Docker installed on your machine. Docker is used to create a consistent build environment. For installation instructions, refer to the [official Docker documentation](https://docs.docker.com/get-docker/).
+
+### Building the Image
+
+1. **Run the Build Script**: In the root directory of this repository, execute the `build-docker.sh` script by running the following command in your terminal:
+   
+   ```bash
+   ./build-docker.sh
 
 ## Dependencies
 
