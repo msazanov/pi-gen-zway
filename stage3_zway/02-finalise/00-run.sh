@@ -1,64 +1,52 @@
 #!/bin/bash -e
 
-# Убираем флаг no_connection для ZBW
+# The '-e' flag causes the script to exit immediately if any command exits with a non-zero status.
+
 on_chroot << EOF
-echo "Удаляем флаг no_connection для ZBW..."
-rm /etc/zbw/flags/no_connection || echo "Флаг no_connection не найден."
+# The 'on_chroot' command is used to execute the following commands inside the chroot environment.
 
+# Remove the 'no_connection' flag file if it exists. Print a message if the file is not found.
+rm /etc/zbw/flags/no_connection || echo "no_connection flag not found."
 
-echo "Останавливаем службу z-way-server..."
-/etc/init.d/z-way-server stop || echo "Ошибка при остановке z-way-server."
+# Attempt to stop the z-way-server. Print a message if it can't be stopped.
+/etc/init.d/z-way-server stop || echo "Cant stop z-way-server."
 
-# Цикл для проверки процесса z-way-server
+# Wait until the z-way-server process has stopped.
 while pgrep -x "z-way-server" > /dev/null; do
-    echo "Ожидаем остановки z-way-server..."
+    echo "Waiting to stop z-way-server..."
     sleep 1
 done
-echo "z-way-server успешно остановлен."
+echo "z-way-server was stopped."
 
-echo "Останавливаем службу zbw_connect..."
-/etc/init.d/zbw_connect stop || echo "Ошибка при остановке zbw_connect."
-
-# Цикл для проверки процесса zbw_connect
+# Repeat the stop and wait process for zbw_connect and mongoose services.
+/etc/init.d/zbw_connect stop || echo "Cant stop zbw_connect."
 while pgrep -x "zbw_connect" > /dev/null; do
-    echo "Ожидаем остановки zbw_connect..."
+    echo "Waiting to stop zbw_connect..."
     sleep 1
 done
-echo "zbw_connect успешно остановлен."
+echo "zbw_connect was stopped."
 
-echo "Останавливаем службу mongoose..."
-/etc/init.d/mongoose stop || echo "Ошибка при остановке mongoose."
-
-# Цикл для проверки процесса mongoose
+/etc/init.d/mongoose stop || echo "Cant stop mongoose."
 while pgrep -x "mongoose" > /dev/null; do
-    echo "Ожидаем остановки mongoose..."
+    echo "Waiting to stop mongoose..."
     sleep 1
 done
-echo "mongoose успешно остановлен."
+echo "mongoose was stopped."
 
-#echo "Проверяем статус всех служб..."
-#service --status-all
-
-#echo "Проверяем, освободился ли /dev..."
-#fuser -vm /dev
-
-#echo "Получаем список запущенных процессов (после остановки служб)..."
-#ps aux
-
-# Принудительно останавливаем start-stop-daemon и mongoose
-echo "Принудительно останавливаем start-stop-daemon..."
+# Force kill the start-stop-daemon process if it's still running.
+echo "Force kill start-stop-daemon..."
 pkill -f start-stop-daemon || true
 sleep 2
 
-# Повторная проверка активных процессов
-#echo "Повторная проверка активных процессов..."
-#ps aux
-
-echo "Отключаем службу serial-getty@ttyAMA0.service"
+# Disable serial-getty service on ttyAMA0.
+echo "Disable service serial-getty@ttyAMA0.service"
 systemctl mask serial-getty@ttyAMA0.service
 
-echo "Отключаем Bluetooth"
+# Disable the Bluetooth service.
+echo "Disable Bluetooth"
 systemctl disable bluetooth.service
+
+# Add configuration strings to /boot/config.txt if they are not already present.
 for str in "dtoverlay=disable-bt" "enable_uart=1" "dtoverlay=pi3-miniuart-bt"; do
     if ! grep -q "$str" "/boot/config.txt"; then
         echo "$str" >> "/boot/config.txt"
@@ -67,47 +55,20 @@ done
 
 EOF
 
-# Путь к файлу конфигурации
-CONFIG_FILE="${ROOTFS_DIR}/boot/config.txt"
-
-echo "Проверка файла: $CONFIG_FILE"
-
-# Строки для добавления, если их нет в файле
+# Define an array of strings to be added to the config file.
 STRINGS=("dtoverlay=disable-bt" "enable_uart=1" "dtoverlay=pi3-miniuart-bt")
 
-# Функция для проверки и добавления строки, если она отсутствует
+# Function to check if a string is in the config file and add it if not.
 check_and_add() {
     if grep -q "$1" "$CONFIG_FILE"; then
-        echo "Строка уже существует: $1"
+        echo "Already added: $1"
     else
-        echo "Добавляем строку: $1"
+        echo "Add line: $1"
         echo "$1" >> "$CONFIG_FILE"
     fi
 }
 
-# Проходим по каждой строке и проверяем её наличие
+# Iterate over the STRINGS array and use the check_and_add function for each item.
 for str in "${STRINGS[@]}"; do
     check_and_add "$str"
 done
-
-echo "Обновление файла $CONFIG_FILE завершено."
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-echo "Процессы успешно остановлены, продолжаем сборку..."
